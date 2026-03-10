@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard CA — Micro-Entreprise</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap');
+
+  :root {
+    --bg: #F7F4EF;
+    --card: #FFFFFF;
+    --ink: #1A1714;
+    --ink-light: #6B6560;
+    --accent: #C85C2D;
+    --accent-light: #F2E8E2;
+    --green: #2D6A4F;
+    --green-light: #D8EDD9;
+    --amber: #B07D2B;
+    --amber-light: #FDF3DC;
+    --red: #C0392B;
+    --red-light: #FDECEA;
+    --border: #E8E3DC;
+    --track: #EDE8E1;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    min-height: 100vh;
+    padding: 32px 24px 60px;
+  }
+
+  /* ── CONFIG PANEL ── */
+  #configPanel {
+    max-width: 520px;
+    margin: 80px auto;
+    background: var(--card);
+    border-radius: 20px;
+    padding: 40px;
+    border: 1px solid var(--border);
+    box-shadow: 0 4px 32px rgba(0,0,0,0.06);
+  }
+  #configPanel h2 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.8rem;
+    margin-bottom: 6px;
+  }
+  #configPanel h2 em { font-style: italic; color: var(--accent); }
+  #configPanel p {
+    font-size: 0.88rem;
+    color: var(--ink-light);
+    margin-bottom: 28px;
+    line-height: 1.5;
+  }
+  .field { margin-bottom: 18px; }
+  .field label {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-light);
+    margin-bottom: 7px;
+  }
+  .field input {
+    width: 100%;
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    color: var(--ink);
+    background: var(--bg);
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .field input:focus { border-color: var(--accent); background: #fff; }
+  .field small { display: block; margin-top: 5px; font-size: 0.76rem; color: var(--ink-light); }
+
+  .btn {
+    width: 100%;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    padding: 13px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.2s;
+    margin-top: 6px;
+  }
+  .btn:hover { opacity: 0.88; }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  #errorMsg {
+    background: var(--red-light);
+    color: var(--red);
+    border-radius: 10px;
+    padding: 12px 16px;
+    font-size: 0.85rem;
+    margin-top: 14px;
+    display: none;
+    line-height: 1.5;
+  }
+
+  /* ── DASHBOARD ── */
+  #dashboard { display: none; }
+
+  .top-bar {
+    max-width: 980px;
+    margin: 0 auto 36px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .top-bar h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 2.2rem;
+    line-height: 1.1;
+  }
+  .top-bar h1 em { font-style: italic; color: var(--accent); }
+  .top-bar-right { display: flex; gap: 10px; align-items: center; }
+  .badge {
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-light);
+    border: 1.5px solid var(--border);
+    border-radius: 20px;
+    padding: 5px 13px;
+    background: var(--card);
+  }
+  .sync-btn {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--accent);
+    border: 1.5px solid var(--accent);
+    border-radius: 20px;
+    padding: 5px 13px;
+    background: var(--accent-light);
+    cursor: pointer;
+    transition: opacity 0.2s;
+  }
+  .sync-btn:hover { opacity: 0.75; }
+
+  .grid {
+    max-width: 980px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+  .card { background: var(--card); border-radius: 16px; padding: 24px; border: 1px solid var(--border); }
+  .card.wide { grid-column: span 3; }
+  .card.half { grid-column: span 2; }
+
+  .card-label {
+    font-size: 0.7rem; font-weight: 600; letter-spacing: 0.1em;
+    text-transform: uppercase; color: var(--ink-light); margin-bottom: 10px;
+  }
+  .card-value {
+    font-family: 'DM Serif Display', serif;
+    font-size: 2.3rem; line-height: 1; color: var(--ink);
+  }
+  .card-value.green { color: var(--green); }
+  .card-value.amber { color: var(--amber); }
+  .card-value.red   { color: var(--red); }
+  .card-sub { font-size: 0.82rem; color: var(--ink-light); margin-top: 6px; }
+
+  .prog-track { height: 8px; background: var(--track); border-radius: 99px; overflow: hidden; margin-top: 16px; }
+  .prog-fill  { height: 100%; border-radius: 99px; transition: width 0.7s ease; }
+  .prog-fill.green  { background: var(--green); }
+  .prog-fill.amber  { background: var(--amber); }
+  .prog-fill.red    { background: var(--red); }
+  .prog-fill.accent { background: var(--accent); }
+  .prog-labels { display: flex; justify-content: space-between; margin-top: 6px; font-size: 0.7rem; color: var(--ink-light); }
+
+  .alert {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 12px 16px; border-radius: 10px;
+    font-size: 0.83rem; font-weight: 500; line-height: 1.4; margin-top: 10px;
+  }
+  .alert.green { background: var(--green-light); color: var(--green); }
+  .alert.amber { background: var(--amber-light); color: var(--amber); }
+  .alert.red   { background: var(--red-light);   color: var(--red); }
+  .alert-icon { font-size: 1rem; flex-shrink: 0; margin-top: 1px; }
+
+  /* Monthly table */
+  .section-title { font-family: 'DM Serif Display', serif; font-size: 1.2rem; margin-bottom: 18px; }
+  table { width: 100%; border-collapse: collapse; }
+  th {
+    font-size: 0.7rem; font-weight: 600; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--ink-light);
+    text-align: left; padding: 0 12px 10px 0; border-bottom: 1px solid var(--border);
+  }
+  th:last-child { text-align: right; padding-right: 0; }
+  td { padding: 10px 12px 10px 0; font-size: 0.87rem; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  td:last-child { text-align: right; padding-right: 0; }
+  tr:last-child td { border-bottom: none; }
+
+  .mini-bar { width: 72px; height: 6px; background: var(--track); border-radius: 99px; overflow: hidden; display: inline-block; vertical-align: middle; }
+  .mini-fill { height: 100%; border-radius: 99px; }
+
+  .pill { display: inline-block; font-size: 0.7rem; font-weight: 600; padding: 3px 9px; border-radius: 99px; }
+  .pill.green   { background: var(--green-light); color: var(--green); }
+  .pill.amber   { background: var(--amber-light); color: var(--amber); }
+  .pill.red     { background: var(--red-light);   color: var(--red); }
+  .pill.neutral { background: var(--border);       color: var(--ink-light); }
+
+  /* URSSAF */
+  .urssaf-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 16px; }
+  .u-item { background: var(--bg); border-radius: 12px; padding: 16px; }
+  .u-item .u-label { font-size: 0.7rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-light); margin-bottom: 6px; }
+  .u-item .u-val   { font-family: 'DM Serif Display', serif; font-size: 1.5rem; color: var(--ink); }
+  .u-item .u-detail{ font-size: 0.76rem; color: var(--ink-light); margin-top: 4px; }
+
+  .divider { height: 1px; background: var(--border); margin: 14px 0; }
+
+  /* Loader */
+  .loader {
+    display: inline-block; width: 18px; height: 18px;
+    border: 2.5px solid var(--border); border-top-color: var(--accent);
+    border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  @media (max-width: 680px) {
+    .grid { grid-template-columns: 1fr; }
+    .card.wide, .card.half { grid-column: span 1; }
+    .top-bar h1 { font-size: 1.7rem; }
+    .urssaf-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- CONFIG -->
+<div id="configPanel">
+  <h2>Dashboard <em>Micro-Entreprise</em></h2>
+  <p>Connecte ton tableau de bord à ta base Encaissement Notion pour synchroniser tes données automatiquement.</p>
+
+  <div class="field">
+    <label>Token d'intégration Notion</label>
+    <input type="password" id="tokenInput" placeholder="ntn_..." />
+    <small>Créé sur notion.so/my-integrations</small>
+  </div>
+  <div class="field">
+    <label>ID de la base Encaissement</label>
+    <input type="text" id="dbInput" placeholder="3188b39baaca8076ae01cdff1d810113" />
+    <small>L'identifiant dans l'URL de ta base Notion</small>
+  </div>
+  <div class="field">
+    <label>Année à afficher</label>
+    <input type="number" id="yearInput" value="2026" min="2020" max="2030" />
+  </div>
+
+  <button class="btn" id="connectBtn" onclick="connect()">Connecter et charger les données</button>
+  <div id="errorMsg"></div>
+</div>
+
+<!-- DASHBOARD -->
+<div id="dashboard">
+  <div class="top-bar">
+    <h1>Ma Micro-Entreprise<br><em>Vision Objectifs</em></h1>
+    <div class="top-bar-right">
+      <div class="badge" id="yearBadge">2026</div>
+      <div class="sync-btn" onclick="loadData()">↻ Synchroniser</div>
+    </div>
+  </div>
+
+  <div class="grid">
+
+    <div class="card">
+      <div class="card-label">CA Encaissé (cumul)</div>
+      <div class="card-value" id="caCumul">—</div>
+      <div class="card-sub" id="caRestant"> </div>
+      <div class="prog-track"><div class="prog-fill accent" id="caBar" style="width:0%"></div></div>
+      <div class="prog-labels"><span>0 €</span><span id="caPct">0%</span><span>77 700 €</span></div>
+    </div>
+
+    <div class="card">
+      <div class="card-label">Alerte Franchise TVA</div>
+      <div class="card-value" id="tvaVal">—</div>
+      <div class="card-sub">Vigilance 36 800 € — Plafond 39 100 €</div>
+      <div class="prog-track"><div class="prog-fill green" id="tvaBar" style="width:0%"></div></div>
+      <div class="prog-labels"><span>0 €</span><span id="tvaPct">0%</span><span>39 100 €</span></div>
+      <div id="tvaAlert"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-label">Projection fin d'année</div>
+      <div class="card-value" id="projVal">—</div>
+      <div class="card-sub" id="projSub"> </div>
+      <div id="projAlert" style="margin-top:12px"></div>
+    </div>
+
+    <div class="card wide">
+      <div class="section-title">Détail mensuel</div>
+      <table>
+        <thead>
+          <tr>
+            <th>Mois</th>
+            <th>CA encaissé</th>
+            <th>Objectif mensuel</th>
+            <th>Progression</th>
+            <th>Statut</th>
+            <th>URSSAF dû</th>
+          </tr>
+        </thead>
+        <tbody id="monthRows"></tbody>
+      </table>
+    </div>
+
+    <div class="card half">
+      <div class="section-title">Charges URSSAF à provisionner</div>
+      <div class="urssaf-grid">
+        <div class="u-item">
+          <div class="u-label">Charges totales</div>
+          <div class="u-val" id="uTotal">—</div>
+          <div class="u-detail">Taux : 21,2% (BIC services)</div>
+        </div>
+        <div class="u-item">
+          <div class="u-label">Charges à venir</div>
+          <div class="u-val" id="uAvenir">—</div>
+          <div class="u-detail">Sur CA restant à encaisser</div>
+        </div>
+        <div class="u-item">
+          <div class="u-label">Net estimé (après charges)</div>
+          <div class="u-val" id="uNet">—</div>
+          <div class="u-detail">CA encaissé − URSSAF</div>
+        </div>
+        <div class="u-item">
+          <div class="u-label">Net si plafond atteint</div>
+          <div class="u-val">61 370 €</div>
+          <div class="u-detail">77 700 € × (1 − 21,2%)</div>
+        </div>
+      </div>
+      <div class="alert amber" style="margin-top:16px">
+        <div class="alert-icon">💡</div>
+        <div>Provisionne <strong>21,2%</strong> de chaque encaissement dès réception. Déclare sur <strong>autoentrepreneur.urssaf.fr</strong>.</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-title">Rappel des seuils</div>
+      <div style="display:flex;flex-direction:column;gap:12px;margin-top:4px">
+        <div>
+          <div class="card-label">Plafond micro-entreprise</div>
+          <div style="font-family:'DM Serif Display',serif;font-size:1.4rem">77 700 €</div>
+          <div class="card-sub">CA annuel BIC services</div>
+        </div>
+        <div class="divider"></div>
+        <div>
+          <div class="card-label">Franchise TVA — vigilance</div>
+          <div style="font-family:'DM Serif Display',serif;font-size:1.4rem;color:var(--amber)">36 800 €</div>
+          <div class="card-sub">Approche → surveille de près</div>
+        </div>
+        <div class="divider"></div>
+        <div>
+          <div class="card-label">Franchise TVA — plafond</div>
+          <div style="font-family:'DM Serif Display',serif;font-size:1.4rem;color:var(--red)">39 100 €</div>
+          <div class="card-sub">Dépasse → TVA obligatoire immédiatement</div>
+        </div>
+        <div class="divider"></div>
+        <div>
+          <div class="card-label">Taux URSSAF BIC services</div>
+          <div style="font-family:'DM Serif Display',serif;font-size:1.4rem">21,2%</div>
+          <div class="card-sub">+ 0,2% formation professionnelle</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  const PLAFOND     = 77700;
+  const TVA_VIGIL   = 36800;
+  const TVA_MAX     = 39100;
+  const URSSAF_RATE = 0.212;
+  const OBJ_MENSUEL = PLAFOND / 12;
+  const MOIS_NOMS   = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+
+  let TOKEN = '', DB_ID = '', ANNEE = 2026;
+
+  function fmt(n) { return Math.round(n).toLocaleString('fr-FR') + ' €'; }
+
+  function saveConfig() {
+    localStorage.setItem('notion_token', TOKEN);
+    localStorage.setItem('notion_db',    DB_ID);
+    localStorage.setItem('notion_year',  ANNEE);
+  }
+
+  function loadConfig() {
+    TOKEN = localStorage.getItem('notion_token') || '';
+    DB_ID = localStorage.getItem('notion_db')    || '';
+    ANNEE = parseInt(localStorage.getItem('notion_year') || new Date().getFullYear());
+    if (TOKEN && DB_ID) {
+      document.getElementById('tokenInput').value = TOKEN;
+      document.getElementById('dbInput').value    = DB_ID;
+      document.getElementById('yearInput').value  = ANNEE;
+    }
+    return !!(TOKEN && DB_ID);
+  }
+
+  async function connect() {
+    TOKEN  = document.getElementById('tokenInput').value.trim();
+    DB_ID  = document.getElementById('dbInput').value.trim().replace(/-/g,'');
+    ANNEE  = parseInt(document.getElementById('yearInput').value) || new Date().getFullYear();
+
+    if (!TOKEN || !DB_ID) { showError('Merci de renseigner le token et l\'ID de la base.'); return; }
+
+    const btn = document.getElementById('connectBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="loader"></span> Connexion…';
+    hideError();
+
+    const ok = await loadData();
+    if (ok) { saveConfig(); }
+    btn.disabled = false;
+    btn.textContent = 'Connecter et charger les données';
+  }
+
+  function showError(msg) {
+    const el = document.getElementById('errorMsg');
+    el.style.display = 'block';
+    el.textContent = msg;
+  }
+  function hideError() { document.getElementById('errorMsg').style.display = 'none'; }
+
+  async function fetchAllPages() {
+    let results = [], cursor = undefined;
+    const startDate = `${ANNEE}-01-01`;
+    const endDate   = `${ANNEE}-12-31`;
+
+    do {
+      const body = {
+        filter: {
+          and: [
+            { property: 'Date encaissement', date: { on_or_after:  startDate } },
+            { property: 'Date encaissement', date: { on_or_before: endDate   } }
+          ]
+        },
+        page_size: 100
+      };
+      if (cursor) body.start_cursor = cursor;
+
+      const res = await fetch(`https://api.notion.com/v1/databases/${DB_ID}/query`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${TOKEN}`,
+          'Notion-Version': '2022-06-28',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(body)
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.message || `Erreur API Notion (${res.status})`);
+      }
+
+      const data = await res.json();
+      results.push(...data.results);
+      cursor = data.has_more ? data.next_cursor : undefined;
+    } while (cursor);
+
+    return results;
+  }
+
+  async function loadData() {
+    try {
+      const pages = await fetchAllPages();
+
+      // Aggregate by month
+      const byMonth = new Array(12).fill(0);
+      for (const page of pages) {
+        const props = page.properties;
+        const montantProp = props['Montant'];
+        const dateProp    = props['Date encaissement'];
+
+        let montant = 0;
+        if (montantProp?.type === 'number') montant = montantProp.number || 0;
+
+        let month = null;
+        if (dateProp?.type === 'date' && dateProp.date?.start) {
+          const d = new Date(dateProp.date.start);
+          if (d.getFullYear() === ANNEE) month = d.getMonth();
+        }
+
+        if (month !== null && montant > 0) byMonth[month] += montant;
+      }
+
+      renderDashboard(byMonth);
+
+      document.getElementById('configPanel').style.display  = 'none';
+      document.getElementById('dashboard').style.display    = 'block';
+      document.getElementById('yearBadge').textContent      = ANNEE;
+      return true;
+
+    } catch (e) {
+      showError('Impossible de charger les données : ' + e.message + '. Vérifie que ton intégration est bien connectée à la base.');
+      return false;
+    }
+  }
+
+  function renderDashboard(byMonth) {
+    const cumul  = byMonth.reduce((a,b)=>a+b, 0);
+    const saisis = byMonth.filter(v=>v>0).length;
+    const caPct  = Math.min(100, (cumul/PLAFOND)*100);
+    const tvaPct = Math.min(100, (cumul/TVA_MAX)*100);
+
+    // CA KPI
+    const caColor = cumul>=PLAFOND ? 'red' : cumul>=PLAFOND*0.8 ? 'amber' : 'green';
+    set('caCumul', fmt(cumul), caColor);
+    setText('caRestant', cumul>=PLAFOND ? '⚠️ Plafond atteint !' : `Reste ${fmt(PLAFOND-cumul)} avant plafond`);
+    setBar('caBar', caPct, caColor);
+    setText('caPct', caPct.toFixed(1)+'%');
+
+    // TVA KPI
+    const tvaColor = cumul>=TVA_MAX ? 'red' : cumul>=TVA_VIGIL ? 'amber' : 'green';
+    set('tvaVal', fmt(cumul), tvaColor);
+    setBar('tvaBar', tvaPct, tvaColor);
+    setText('tvaPct', ((cumul/TVA_MAX)*100).toFixed(1)+'%');
+    let tvaHTML = '';
+    if (cumul>=TVA_MAX)    tvaHTML = alert_html('red','🚨',`<strong>Plafond TVA dépassé !</strong> Tu dois facturer la TVA dès maintenant et contacter ton SIE.`);
+    else if (cumul>=TVA_VIGIL) tvaHTML = alert_html('amber','⚠️',`<strong>Zone de vigilance TVA.</strong> Il ne reste que ${fmt(TVA_MAX-cumul)} avant le plafond.`);
+    else                   tvaHTML = alert_html('green','✅',`Franchise TVA active. Tu n'appliques pas de TVA sur tes factures.`);
+    document.getElementById('tvaAlert').innerHTML = tvaHTML;
+
+    // Projection
+    if (saisis>0) {
+      const proj = (cumul/saisis)*12;
+      const pColor = proj>PLAFOND ? 'red' : proj>PLAFOND*0.85 ? 'amber' : 'green';
+      set('projVal', fmt(proj), pColor);
+      setText('projSub', `Moyenne : ${fmt(cumul/saisis)} / mois (${saisis} mois)`);
+      let pHTML = '';
+      if (proj>PLAFOND)          pHTML = alert_html('red','🚨','Projection dépasse le plafond. Anticipe le passage en société.');
+      else if (proj>PLAFOND*0.85) pHTML = alert_html('amber','⚠️','Proche du plafond en fin d\'année. Surveille de près.');
+      else                        pHTML = alert_html('green','✅','Objectif annuel atteignable à ce rythme.');
+      document.getElementById('projAlert').innerHTML = pHTML;
+    } else {
+      document.getElementById('projVal').textContent = '—';
+      setText('projSub','Aucune donnée pour cette année');
+    }
+
+    // URSSAF
+    set('uTotal',  fmt(cumul*URSSAF_RATE));
+    set('uAvenir', fmt(Math.max(0,PLAFOND-cumul)*URSSAF_RATE));
+    set('uNet',    fmt(cumul*(1-URSSAF_RATE)));
+
+    // Monthly rows
+    const tbody = document.getElementById('monthRows');
+    tbody.innerHTML = '';
+    byMonth.forEach((v, i) => {
+      const pct    = Math.min(100,(v/OBJ_MENSUEL)*100);
+      const color  = v===0 ? '#CCC' : pct>=100 ? 'var(--green)' : pct>=70 ? 'var(--amber)' : 'var(--red)';
+      const pillCl = v===0 ? 'neutral' : pct>=100 ? 'green' : pct>=70 ? 'amber' : 'red';
+      const pillTx = v===0 ? '—' : pct>=100 ? '✓ Objectif' : pct>=70 ? 'Proche' : 'En retard';
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td style="font-weight:500">${MOIS_NOMS[i]}</td>
+        <td style="font-weight:600">${v>0?fmt(v):'—'}</td>
+        <td style="color:var(--ink-light)">${fmt(OBJ_MENSUEL)}</td>
+        <td>
+          <div style="display:flex;align-items:center;gap:7px">
+            <div class="mini-bar"><div class="mini-fill" style="width:${pct}%;background:${color}"></div></div>
+            <span style="font-size:0.75rem;color:var(--ink-light)">${v>0?pct.toFixed(0)+'%':'—'}</span>
+          </div>
+        </td>
+        <td><span class="pill ${pillCl}">${pillTx}</span></td>
+        <td style="font-weight:500;color:var(--accent)">${v>0?fmt(v*URSSAF_RATE):'—'}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  function set(id, val, colorClass='') {
+    const el = document.getElementById(id);
+    el.textContent = val;
+    if (colorClass) el.className = (el.className.replace(/\b(green|amber|red)\b/g,'')).trim() + ' ' + colorClass;
+  }
+  function setText(id, val) { document.getElementById(id).textContent = val; }
+  function setBar(id, pct, colorClass) {
+    const el = document.getElementById(id);
+    el.style.width = pct+'%';
+    el.className = `prog-fill ${colorClass}`;
+  }
+  function alert_html(type, icon, msg) {
+    return `<div class="alert ${type}"><div class="alert-icon">${icon}</div><div>${msg}</div></div>`;
+  }
+
+  // Init
+  window.onload = () => {
+    if (loadConfig() && TOKEN && DB_ID) {
+      document.getElementById('tokenInput').value = TOKEN;
+      document.getElementById('dbInput').value    = DB_ID;
+      document.getElementById('yearInput').value  = ANNEE;
+      loadData();
+    }
+  };
+</script>
+</body>
+</html>
