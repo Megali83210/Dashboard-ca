@@ -63,7 +63,7 @@ tr:hover td{background:#FAFAF8}
 .thumb-ph{width:38px;height:38px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);display:flex;align-items:center;justify-content:center}
 .mono{font-family:var(--font-mono);font-size:11px;color:var(--text-mid)}
 .modal-overlay{display:none;position:fixed;inset:0;background:rgba(26,24,20,.5);z-index:1000;align-items:flex-start;justify-content:center;padding:2rem;overflow-y:auto}
-.modal-overlay.open{display:flex}
+.modal-overlay.open{display:flex}.modal-overlay[style*="flex"]{display:flex!important}
 .modal{background:var(--surface);border-radius:var(--radius-lg);border:1px solid var(--border);width:100%;max-width:620px;margin:auto}
 .modal-header{padding:1.5rem 1.75rem 1rem;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
 .modal-title{font-family:var(--font-display);font-size:22px;font-weight:300}
@@ -310,13 +310,14 @@ const TABLE_OEUVRES='Oeuvres';
 const TABLE_CLIENTS='Clients';
 
 function getConfig(){
-  const token=localStorage.getItem('jek_token');
-  const baseId=localStorage.getItem('jek_base');
-  return {token,baseId};
+  try{
+    const token=localStorage.getItem('jek_token')||'';
+    const baseId=localStorage.getItem('jek_base')||'';
+    return {token,baseId};
+  }catch(e){return {token:'',baseId:''};}
 }
 function saveConfig(token,baseId){
-  localStorage.setItem('jek_token',token);
-  localStorage.setItem('jek_base',baseId);
+  try{localStorage.setItem('jek_token',token);localStorage.setItem('jek_base',baseId);}catch(e){}
 }
 function getAPI(){const{baseId}=getConfig();return `https://api.airtable.com/v0/${baseId}`;}
 function getHeaders(){const{token}=getConfig();return {'Authorization':`Bearer ${token}`,'Content-Type':'application/json'};}
@@ -362,7 +363,7 @@ async function loadData(){
     // If auth error, show config modal
     if(e.message.includes('401')||e.message.includes('403')||!getConfig().token){
       showToast('Token invalide — veuillez vous reconnecter');
-      setTimeout(()=>document.getElementById('config-modal').classList.add('open'),800);
+      setTimeout(()=>{document.getElementById('config-modal').style.display='flex';},800);
     } else {
       showToast('Erreur de connexion à Airtable');
     }
@@ -681,32 +682,26 @@ function generatePDF(){
   doc.save(num+'.pdf');
 }
 
-// Check config on load
-function checkConfig(){
-  try {
-    const{token,baseId}=getConfig();
-    if(!token||!baseId){
-      document.getElementById('config-modal').classList.add('open');
-    } else {
-      loadData();
-    }
-  } catch(e) {
-    document.getElementById('config-modal').classList.add('open');
-  }
-}
 function saveConfigAndLoad(){
   const token=document.getElementById('cfg-token').value.trim();
   const baseId=document.getElementById('cfg-base').value.trim();
   if(!token||!baseId){showToast('Les deux champs sont obligatoires');return;}
-  try { saveConfig(token,baseId); } catch(e) {}
-  document.getElementById('config-modal').classList.remove('open');
+  try{localStorage.setItem('jek_token',token);localStorage.setItem('jek_base',baseId);}catch(e){}
+  document.getElementById('config-modal').style.display='none';
   loadData();
 }
-// Also add settings button to sidebar footer
-document.addEventListener('DOMContentLoaded', function(){
-  document.querySelector('.sidebar-footer').innerHTML += '<br><span onclick="document.getElementById('config-modal').classList.add('open')" style="cursor:pointer;color:rgba(255,255,255,.25);font-size:10px;font-family:var(--font-mono);letter-spacing:.06em">⚙ Modifier la connexion</span>';
-});
-checkConfig();updatePreview();
+
+// Always show login modal first, then check
+window.onload=function(){
+  updatePreview();
+  let token='',baseId='';
+  try{token=localStorage.getItem('jek_token')||'';baseId=localStorage.getItem('jek_base')||'';}catch(e){}
+  if(token&&baseId){
+    loadData();
+  } else {
+    document.getElementById('config-modal').style.display='flex';
+  }
+};
 </script>
 
 <!-- MODAL CONFIG -->
@@ -740,7 +735,7 @@ checkConfig();updatePreview();
 
 <!-- RESET CONFIG (hidden button in sidebar) -->
 <div style="position:fixed;bottom:60px;left:0;width:220px;padding:0 1.5rem">
-  <button onclick="localStorage.removeItem('jek_token');localStorage.removeItem('jek_base');location.reload()" style="width:100%;padding:6px;font-size:10px;background:none;border:none;color:rgba(255,255,255,.2);cursor:pointer;font-family:var(--font-mono);letter-spacing:.06em">Réinitialiser la connexion</button>
+  <button onclick="try{localStorage.removeItem('jek_token');localStorage.removeItem('jek_base');}catch(e){} location.reload()" style="width:100%;padding:6px;font-size:10px;background:none;border:none;color:rgba(255,255,255,.2);cursor:pointer;font-family:var(--font-mono);letter-spacing:.06em">Réinitialiser la connexion</button>
 </div>
 </body>
 </html>
