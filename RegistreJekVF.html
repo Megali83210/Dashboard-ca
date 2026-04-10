@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Registre JEK — Jean-François Parodi</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=DM+Mono:wght@300;400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+:root{--bg:#F7F5F0;--surface:#FFFFFF;--border:#E2DDD6;--border-dark:#C8C2B8;--text:#1A1814;--text-mid:#6B6560;--text-light:#9E9890;--green:#2D5A3D;--green-bg:#EAF2ED;--red:#8B2E2E;--red-bg:#F5EAEA;--amber:#7A5A1E;--amber-bg:#F5F0E8;--blue:#1E3D6B;--blue-bg:#EAF0F8;--gray:#4A4640;--gray-bg:#F0EDEA;--purple:#4A2D6B;--purple-bg:#F0EAF8;--font-display:'Cormorant Garamond',serif;--font-body:'DM Sans',sans-serif;--font-mono:'DM Mono',monospace;--radius:4px;--radius-lg:8px}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);font-family:var(--font-body);font-size:13px;color:var(--text);min-height:100vh}
+.app{display:grid;grid-template-columns:220px 1fr;min-height:100vh}
+.sidebar{background:var(--text);color:#fff;padding:2rem 0;display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow:hidden}
+.sidebar-brand{padding:0 1.5rem 2rem;border-bottom:1px solid rgba(255,255,255,.1)}
+.sidebar-artist{font-family:var(--font-display);font-size:28px;font-weight:300;letter-spacing:.08em;color:#fff;line-height:1}
+.sidebar-sub{font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:rgba(255,255,255,.4);margin-top:6px;font-family:var(--font-mono)}
+.sidebar-nav{padding:1.5rem 0;flex:1}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 1.5rem;font-size:12px;letter-spacing:.06em;color:rgba(255,255,255,.55);cursor:pointer;transition:all .15s;border-left:2px solid transparent}
+.nav-item:hover{color:#fff;background:rgba(255,255,255,.06)}
+.nav-item.active{color:#fff;border-left-color:#fff;background:rgba(255,255,255,.08)}
+.nav-icon{width:16px;height:16px;opacity:.7}
+.sidebar-footer{padding:1rem 1.5rem;border-top:1px solid rgba(255,255,255,.1);font-size:10px;color:rgba(255,255,255,.3);font-family:var(--font-mono)}
+.main{padding:2rem 2.5rem;overflow-x:hidden}
+.page-header{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:2rem;padding-bottom:1.5rem;border-bottom:1px solid var(--border)}
+.page-title{font-family:var(--font-display);font-size:36px;font-weight:300;letter-spacing:.02em;line-height:1}
+.page-date{font-size:11px;color:var(--text-light);font-family:var(--font-mono)}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:.75rem;margin-bottom:1.5rem}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.25rem}
+.stat-label{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--text-light);margin-bottom:8px;font-family:var(--font-mono)}
+.stat-val{font-family:var(--font-display);font-size:32px;font-weight:300;line-height:1}
+.toolbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;gap:8px;flex-wrap:wrap}
+.toolbar-left{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.search-input{padding:7px 12px;border:1px solid var(--border);border-radius:var(--radius);font-size:12px;background:var(--surface);color:var(--text);width:200px;font-family:var(--font-body)}
+.search-input:focus{outline:none;border-color:var(--border-dark)}
+.filter-select{padding:7px 10px;border:1px solid var(--border);border-radius:var(--radius);font-size:12px;background:var(--surface);color:var(--text);font-family:var(--font-body);cursor:pointer}
+.btn{padding:8px 16px;font-size:12px;cursor:pointer;border-radius:var(--radius);border:1px solid var(--border-dark);background:var(--surface);color:var(--text);font-family:var(--font-body);transition:all .15s;white-space:nowrap}
+.btn:hover{background:var(--bg)}
+.btn-primary{background:var(--text);color:#fff;border-color:var(--text)}
+.btn-primary:hover{opacity:.85;background:var(--text)}
+.btn-sm{padding:4px 10px;font-size:11px}
+.btn-ghost{border-color:transparent;background:transparent}
+.btn-ghost:hover{background:var(--bg)}
+.sort-btn{display:flex;align-items:center;gap:6px;padding:7px 12px;border:1px solid var(--border);border-radius:var(--radius);font-size:11px;background:var(--surface);color:var(--text-mid);font-family:var(--font-mono);cursor:pointer;transition:all .15s}
+.sort-btn:hover{border-color:var(--border-dark);color:var(--text)}
+.sort-btn.active{border-color:var(--text);color:var(--text);background:var(--bg)}
+.tbl-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden}
+.tbl-scroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:12px;min-width:1000px}
+th{background:var(--bg);font-weight:500;text-align:left;padding:10px 14px;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--text-light);border-bottom:1px solid var(--border);white-space:nowrap;font-family:var(--font-mono)}
+td{padding:10px 14px;border-bottom:1px solid var(--border);color:var(--text);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#FAFAF8}
+.empty-row td{text-align:center;padding:3rem;color:var(--text-light);font-style:italic}
+.badge{display:inline-block;padding:3px 9px;border-radius:20px;font-size:10px;font-weight:400;font-family:var(--font-mono);white-space:nowrap}
+.badge-dispo{background:var(--green-bg);color:var(--green)}
+.badge-vendu{background:var(--red-bg);color:var(--red)}
+.badge-reserve{background:var(--amber-bg);color:var(--amber)}
+.badge-expo{background:var(--blue-bg);color:var(--blue)}
+.badge-galerie{background:var(--purple-bg);color:var(--purple)}
+.badge-nonvente{background:var(--gray-bg);color:var(--gray)}
+.thumb{width:38px;height:38px;object-fit:contain;border-radius:var(--radius);border:1px solid var(--border);background:var(--bg)}
+.thumb-ph{width:38px;height:38px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);display:flex;align-items:center;justify-content:center}
+.mono{font-family:var(--font-mono);font-size:11px;color:var(--text-mid)}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(26,24,20,.5);z-index:1000;align-items:flex-start;justify-content:center;padding:2rem;overflow-y:auto}
+.modal-overlay.open{display:flex}
+.modal{background:var(--surface);border-radius:var(--radius-lg);border:1px solid var(--border);width:100%;max-width:620px;margin:auto}
+.modal-header{padding:1.5rem 1.75rem 1rem;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+.modal-title{font-family:var(--font-display);font-size:22px;font-weight:300}
+.modal-close{background:none;border:none;cursor:pointer;font-size:20px;color:var(--text-light);padding:4px 8px;border-radius:var(--radius)}
+.modal-close:hover{background:var(--bg)}
+.modal-body{padding:1.5rem 1.75rem}
+.modal-footer{padding:1rem 1.75rem;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.form-grid.full{grid-template-columns:1fr}
+.field{display:flex;flex-direction:column;gap:5px}
+.field label{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--text-mid);font-family:var(--font-mono)}
+.field input,.field select,.field textarea{padding:8px 10px;border:1px solid var(--border);border-radius:var(--radius);font-size:13px;background:var(--surface);color:var(--text);font-family:var(--font-body);transition:border .15s}
+.field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--border-dark)}
+.field textarea{height:60px;resize:vertical}
+.field-section{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--text-light);font-family:var(--font-mono);padding:8px 0 4px;border-bottom:1px solid var(--border);margin-bottom:2px;grid-column:1/-1}
+.photo-drop{border:1px dashed var(--border-dark);border-radius:var(--radius);padding:16px;display:flex;align-items:center;justify-content:center;cursor:pointer;background:var(--bg);font-size:12px;color:var(--text-light);transition:all .15s;min-height:70px}
+.photo-drop:hover{border-color:var(--text);color:var(--text)}
+.cert-wrap{display:grid;grid-template-columns:1fr 1fr;gap:2rem}
+.cert-form{display:flex;flex-direction:column;gap:12px}
+.cert-preview-box{background:#fff;border:1px solid var(--border);border-radius:var(--radius-lg);padding:22px;font-family:'DM Sans',sans-serif;color:#1A1814;font-size:11px}
+.section{display:none}
+.section.active{display:block}
+.toast{position:fixed;bottom:2rem;right:2rem;background:var(--text);color:#fff;padding:10px 18px;border-radius:var(--radius);font-size:12px;z-index:9999;opacity:0;transform:translateY(8px);transition:all .25s;font-family:var(--font-body)}
+.toast.show{opacity:1;transform:translateY(0)}
+.client-tbl{min-width:700px}
+.cert-select-bar{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1rem 1.25rem;margin-bottom:1.5rem;display:flex;align-items:center;gap:12px}
+.cert-select-bar label{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--text-mid);font-family:var(--font-mono);white-space:nowrap}
+.cert-select-bar select{flex:1;max-width:360px;padding:7px 10px;border:1px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font-body);background:var(--surface);color:var(--text)}
+.sync-dot{width:6px;height:6px;border-radius:50%;background:#2D5A3D;display:inline-block;margin-right:6px}
+.sync-dot.syncing{background:#7A5A1E;animation:pulse .8s ease-in-out infinite}
+.sync-dot.error{background:#8B2E2E}
+.loading{display:flex;align-items:center;gap:8px;color:var(--text-light);font-size:12px;padding:2rem}
+.spinner{width:16px;height:16px;border:2px solid var(--border);border-top-color:var(--text);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="sidebar-artist">JEK</div>
+      <div class="sidebar-sub">Jean-François Parodi</div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-item active" onclick="showSection('oeuvres')">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+        Œuvres
+      </div>
+      <div class="nav-item" onclick="showSection('clients')">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Clients
+      </div>
+      <div class="nav-item" onclick="showSection('cert')">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        Certificats
+      </div>
+    </nav>
+    <div class="sidebar-footer">
+      <span class="sync-dot" id="sync-dot"></span>
+      <span id="sync-label">Connecté · Airtable</span>
+    </div>
+  </aside>
+
+  <main class="main">
+    <!-- OEUVRES -->
+    <div id="sec-oeuvres" class="section active">
+      <div class="page-header">
+        <div class="page-title">Registre des œuvres</div>
+        <div style="display:flex;align-items:center;gap:12px">
+          <div class="page-date" id="today"></div>
+          <button class="btn btn-primary" onclick="openOeuvreModal()">+ Nouvelle œuvre</button>
+        </div>
+      </div>
+      <div class="stats" id="stats"></div>
+      <div class="toolbar">
+        <div class="toolbar-left">
+          <input class="search-input" type="text" placeholder="Rechercher..." id="search-oeuvres" oninput="renderOeuvres()">
+          <select class="filter-select" id="filter-statut" onchange="renderOeuvres()">
+            <option value="">Tous les statuts</option>
+            <option>Disponible</option>
+            <option>Réservée</option>
+            <option>Exposée</option>
+            <option>En galerie</option>
+            <option>Vendu</option>
+            <option>Non mis en vente</option>
+          </select>
+          <button class="sort-btn" id="sort-btn" onclick="toggleSort()">
+            <span id="sort-label">001 → 999</span>
+            <span id="sort-arrow">↑</span>
+          </button>
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="loadData()" style="font-family:var(--font-mono);font-size:11px">↻ Actualiser</button>
+      </div>
+      <div class="tbl-wrap">
+        <div class="tbl-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>N° Cert.</th><th>Photo</th><th>Titre</th><th>Année</th><th>Technique</th><th>Support</th><th>Dim.</th><th>Statut</th><th>Prix</th><th>Acheteur</th><th>Dt. galerie</th><th>Dt. réserv.</th><th>Dt. vente</th><th>Localisation</th><th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="oeuvres-body">
+              <tr><td colspan="15"><div class="loading"><div class="spinner"></div>Chargement depuis Airtable...</div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- CLIENTS -->
+    <div id="sec-clients" class="section">
+      <div class="page-header">
+        <div class="page-title">Base clients</div>
+        <button class="btn btn-primary" onclick="openClientModal()">+ Nouveau client</button>
+      </div>
+      <div class="tbl-wrap">
+        <div class="tbl-scroll">
+          <table class="client-tbl">
+            <thead>
+              <tr><th>Nom</th><th>Prénom</th><th>Téléphone</th><th>Email</th><th>Adresse</th><th>Œuvres</th><th>Actions</th></tr>
+            </thead>
+            <tbody id="clients-body">
+              <tr><td colspan="7"><div class="loading"><div class="spinner"></div>Chargement...</div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- CERTIFICATS -->
+    <div id="sec-cert" class="section">
+      <div class="page-header">
+        <div class="page-title">Générateur de certificat</div>
+      </div>
+      <div class="cert-select-bar">
+        <label>Pré-remplir depuis</label>
+        <select id="cert-oeuvre-select" onchange="prefillCert()">
+          <option value="">— Choisir une œuvre —</option>
+        </select>
+      </div>
+      <div class="cert-wrap">
+        <div class="cert-form">
+          <div class="field"><label>N° certificat</label><input type="text" id="c-num" oninput="updatePreview()"></div>
+          <div class="field"><label>Titre (optionnel)</label><input type="text" id="c-titre" placeholder="Laisser vide = N° certificat" oninput="updatePreview()"></div>
+          <div class="field"><label>Année de création</label><input type="text" id="c-annee" oninput="updatePreview()"></div>
+          <div class="field"><label>Technique</label><input type="text" id="c-technique" oninput="updatePreview()"></div>
+          <div class="field"><label>Support</label><input type="text" id="c-support" oninput="updatePreview()"></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            <div class="field"><label>Hauteur (cm)</label><input type="text" id="c-h" oninput="updatePreview()"></div>
+            <div class="field"><label>Largeur (cm)</label><input type="text" id="c-l" oninput="updatePreview()"></div>
+          </div>
+          <div class="field">
+            <label>Photo de l'œuvre</label>
+            <input type="file" id="c-photo-file" accept="image/*" style="display:none" onchange="loadCertPhoto(event)">
+            <div class="photo-drop" id="c-photo-drop" onclick="document.getElementById('c-photo-file').click()">Cliquer pour ajouter une photo</div>
+          </div>
+          <button class="btn btn-primary" onclick="generatePDF()" style="width:100%;padding:10px;font-size:13px">Télécharger le PDF</button>
+        </div>
+        <div>
+          <div style="font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--text-light);font-family:var(--font-mono);margin-bottom:10px">Aperçu</div>
+          <div class="cert-preview-box" id="cert-preview"></div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- MODAL OEUVRE -->
+<div class="modal-overlay" id="modal-oeuvre">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="oeuvre-modal-title">Nouvelle œuvre</div>
+      <button class="modal-close" onclick="closeModal('modal-oeuvre')">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="o-record-id">
+      <div class="form-grid">
+        <div class="field-section">Identification</div>
+        <div class="field"><label>Titre (optionnel)</label><input type="text" id="o-titre" placeholder="Laisser vide si sans titre"></div>
+        <div class="field"><label>Année de création</label><input type="text" id="o-annee"></div>
+        <div class="field"><label>Technique</label><input type="text" id="o-technique" placeholder="Acrylique, Huile…"></div>
+        <div class="field"><label>Support</label><input type="text" id="o-support" placeholder="Toile, Bois…"></div>
+        <div class="field"><label>Hauteur (cm)</label><input type="number" id="o-h"></div>
+        <div class="field"><label>Largeur (cm)</label><input type="number" id="o-l"></div>
+        <div class="field-section">Statut commercial</div>
+        <div class="field"><label>Statut</label>
+          <select id="o-statut">
+            <option>Disponible</option><option>Réservée</option><option>Exposée</option><option>En galerie</option><option>Vendu</option><option>Non mis en vente</option>
+          </select>
+        </div>
+        <div class="field"><label>Prix (€)</label><input type="number" id="o-prix"></div>
+        <div class="field"><label>Acheteur</label><select id="o-acheteur"><option value="">— Aucun —</option></select></div>
+        <div class="field"><label>Localisation</label><input type="text" id="o-loc" placeholder="Atelier, Galerie X…"></div>
+        <div class="field-section">Dates</div>
+        <div class="field"><label>Date de création (fiche)</label><input type="date" id="o-dt-enreg"></div>
+        <div class="field"><label>Date entrée en galerie</label><input type="date" id="o-dt-galerie"></div>
+        <div class="field"><label>Date réservation</label><input type="date" id="o-dt-reserve"></div>
+        <div class="field"><label>Date de vente</label><input type="date" id="o-dt-vente"></div>
+        <div class="field-section">Média & notes</div>
+        <div class="field" style="grid-column:1/-1">
+          <label>Photo</label>
+          <input type="file" id="o-photo-file" accept="image/*" style="display:none" onchange="loadOeuvrePhoto(event)">
+          <div class="photo-drop" id="o-photo-drop" onclick="document.getElementById('o-photo-file').click()">Cliquer pour ajouter une photo</div>
+        </div>
+        <div class="field" style="grid-column:1/-1"><label>Notes</label><textarea id="o-notes"></textarea></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('modal-oeuvre')">Annuler</button>
+      <button class="btn btn-primary" onclick="saveOeuvre()" id="save-oeuvre-btn">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL CLIENT -->
+<div class="modal-overlay" id="modal-client">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="client-modal-title">Nouveau client</div>
+      <button class="modal-close" onclick="closeModal('modal-client')">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="cl-record-id">
+      <div class="form-grid">
+        <div class="field"><label>Nom *</label><input type="text" id="cl-nom"></div>
+        <div class="field"><label>Prénom</label><input type="text" id="cl-prenom"></div>
+        <div class="field"><label>Téléphone</label><input type="text" id="cl-tel"></div>
+        <div class="field"><label>Email</label><input type="email" id="cl-email"></div>
+        <div class="field" style="grid-column:1/-1"><label>Adresse postale</label><textarea id="cl-adresse" style="height:50px"></textarea></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('modal-client')">Annuler</button>
+      <button class="btn btn-primary" onclick="saveClient()" id="save-client-btn">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const TABLE_OEUVRES='Oeuvres';
+const TABLE_CLIENTS='Clients';
+
+function getConfig(){
+  const token=localStorage.getItem('jek_token');
+  const baseId=localStorage.getItem('jek_base');
+  return {token,baseId};
+}
+function saveConfig(token,baseId){
+  localStorage.setItem('jek_token',token);
+  localStorage.setItem('jek_base',baseId);
+}
+function getAPI(){const{baseId}=getConfig();return `https://api.airtable.com/v0/${baseId}`;}
+function getHeaders(){const{token}=getConfig();return {'Authorization':`Bearer ${token}`,'Content-Type':'application/json'};}
+
+let oeuvres=[], clients=[];
+let certPhotoUrl=null, oeuvrePhotoUrl=null;
+let sortAsc=true;
+
+document.getElementById('today').textContent=new Date().toLocaleDateString('fr-FR',{day:'2-digit',month:'long',year:'numeric'});
+document.getElementById('o-dt-enreg').value=new Date().toISOString().split('T')[0];
+
+function setSyncState(s){
+  const dot=document.getElementById('sync-dot'),lbl=document.getElementById('sync-label');
+  dot.className='sync-dot'+(s==='syncing'?' syncing':s==='error'?' error':'');
+  lbl.textContent=s==='syncing'?'Synchronisation...':s==='error'?'Erreur de connexion':'Connecté · Airtable';
+}
+function showToast(msg,d=2500){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),d);}
+
+async function airtableFetch(table,opts={}){
+  let url=`${getAPI()}/${encodeURIComponent(table)}`;
+  if(opts.params)url+='?'+new URLSearchParams(opts.params);
+  const res=await fetch(url,{method:opts.method||'GET',headers:getHeaders(),body:opts.body?JSON.stringify(opts.body):undefined});
+  if(!res.ok)throw new Error(await res.text());
+  return res.json();
+}
+async function loadAll(table){
+  let records=[],offset;
+  do{const params={pageSize:100};if(offset)params.offset=offset;const data=await airtableFetch(table,{params});records=records.concat(data.records);offset=data.offset;}while(offset);
+  return records;
+}
+
+async function loadData(){
+  setSyncState('syncing');
+  try{
+    const[oa,ca]=await Promise.all([loadAll(TABLE_OEUVRES),loadAll(TABLE_CLIENTS)]);
+    clients=ca.map(r=>({id:r.id,...r.fields}));
+    oeuvres=oa.map(r=>({id:r.id,...r.fields}));
+    renderOeuvres();renderClients();renderStats();refreshCertSelect();refreshAcheteurSelect();
+    setSyncState('ok');
+  }catch(e){
+    setSyncState('error');
+    console.error(e);
+    // If auth error, show config modal
+    if(e.message.includes('401')||e.message.includes('403')||!getConfig().token){
+      showToast('Token invalide — veuillez vous reconnecter');
+      setTimeout(()=>document.getElementById('config-modal').classList.add('open'),800);
+    } else {
+      showToast('Erreur de connexion à Airtable');
+    }
+  }
+}
+
+function badgeClass(s){
+  return {'Disponible':'badge-dispo','Vendu':'badge-vendu','Réservée':'badge-reserve','Exposée':'badge-expo','En galerie':'badge-galerie','Non mis en vente':'badge-nonvente'}[s]||'badge-dispo';
+}
+function fmtDate(d){return d?new Date(d).toLocaleDateString('fr-FR'):'—';}
+function fmtPrix(p){return p?Number(p).toLocaleString('fr-FR')+' €':'—';}
+
+function parseNum(n){
+  if(!n)return 999999;
+  const m=n.match(/(\d+)$/);
+  return m?parseInt(m[1]):999999;
+}
+
+function toggleSort(){
+  sortAsc=!sortAsc;
+  document.getElementById('sort-label').textContent=sortAsc?'001 → 999':'999 → 001';
+  document.getElementById('sort-arrow').textContent=sortAsc?'↑':'↓';
+  renderOeuvres();
+}
+
+function renderOeuvres(){
+  const search=document.getElementById('search-oeuvres').value.toLowerCase();
+  const filterStatut=document.getElementById('filter-statut').value;
+  let filtered=oeuvres.filter(o=>{
+    const matchSearch=!search||(o['N° certificat']||'').toLowerCase().includes(search)||(o['Titre']||'').toLowerCase().includes(search)||(o['Technique']||'').toLowerCase().includes(search);
+    const matchStatut=!filterStatut||o['Statut']===filterStatut;
+    return matchSearch&&matchStatut;
+  });
+  filtered.sort((a,b)=>{
+    const na=parseNum(a['N° certificat']),nb=parseNum(b['N° certificat']);
+    return sortAsc?na-nb:nb-na;
+  });
+  const tbody=document.getElementById('oeuvres-body');
+  if(!filtered.length){tbody.innerHTML='<tr><td colspan="15" style="text-align:center;padding:2rem;color:var(--text-light);font-style:italic">Aucune œuvre trouvée</td></tr>';return;}
+  tbody.innerHTML=filtered.map(o=>{
+    const cl=clients.find(c=>o['Acheteur']&&o['Acheteur'].includes(c.id));
+    const clNom=cl?`${cl['Nom']||''} ${cl['Prénom']||''}`.trim():'—';
+    const photo=o['Photo']&&o['Photo'][0]?o['Photo'][0].url:null;
+    const thumb=photo?`<img src="${photo}" class="thumb" onerror="this.style.display='none'">`:`<div class="thumb-ph"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9E9890" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></div>`;
+    const dims=o['Hauteur (cm)']&&o['Largeur (cm)']?`${o['Hauteur (cm)']} × ${o['Largeur (cm)']} cm`:'—';
+    return `<tr>
+      <td class="mono">${o['N° certificat']||'—'}</td>
+      <td>${thumb}</td>
+      <td>${o['Titre']||'<span style="color:#9E9890;font-style:italic">Sans titre</span>'}</td>
+      <td>${o['Année de création']||'—'}</td>
+      <td>${o['Technique']||'—'}</td>
+      <td>${o['Support']||'—'}</td>
+      <td class="mono">${dims}</td>
+      <td><span class="badge ${badgeClass(o['Statut'])}">${o['Statut']||'—'}</span></td>
+      <td class="mono">${fmtPrix(o['Prix (€)'])}</td>
+      <td>${clNom}</td>
+      <td class="mono">${fmtDate(o['Date entrée en galerie'])}</td>
+      <td class="mono">${fmtDate(o['Date réservation'])}</td>
+      <td class="mono">${fmtDate(o['Date de vente'])}</td>
+      <td>${o['Localisation actuelle']||'—'}</td>
+      <td style="white-space:nowrap">
+        <button class="btn btn-sm" onclick="editOeuvre('${o.id}')" style="margin-right:4px">Modifier</button>
+        <button class="btn btn-sm btn-primary" onclick="genCertFromOeuvre('${o.id}')">PDF</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function renderStats(){
+  const total=oeuvres.length;
+  const dispos=oeuvres.filter(o=>o["Statut"]==="Disponible").length;
+  const reservees=oeuvres.filter(o=>o["Statut"]==="Réservée").length;
+  const exposees=oeuvres.filter(o=>o["Statut"]==="Exposée").length;
+  const galerie=oeuvres.filter(o=>o["Statut"]==="En galerie").length;
+  const vendus=oeuvres.filter(o=>o["Statut"]==="Vendu").length;
+  const nonvente=oeuvres.filter(o=>o["Statut"]==="Non mis en vente").length;
+  const ca=oeuvres.filter(o=>o["Statut"]==="Vendu"&&o["Prix (€)"]).reduce((s,o)=>s+Number(o["Prix (€)"]),0);
+  const cards=[["Total",total,""],["Disponibles",dispos,"color:#2D5A3D"],["Réservées",reservees,"color:#7A5A1E"],["Exposées",exposees,"color:#1E3D6B"],["En galerie",galerie,"color:#4A2D6B"],["Vendues",vendus,"color:#8B2E2E"],["Non en vente",nonvente,"color:#4A4640"],["CA total",ca.toLocaleString("fr-FR")+" €",""]];
+  document.getElementById("stats").innerHTML=cards.map(([l,v,style])=>`<div class="stat-card"><div class="stat-label">${l}</div><div class="stat-val" style="${style}">${v}</div></div>`).join("");
+}
+
+function renderClients(){
+  const tbody=document.getElementById('clients-body');
+  if(!clients.length){tbody.innerHTML='<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--text-light);font-style:italic">Aucun client</td></tr>';return;}
+  tbody.innerHTML=clients.map(c=>{
+    const nb=oeuvres.filter(o=>o['Acheteur']&&o['Acheteur'].includes(c.id)).length;
+    return `<tr>
+      <td style="font-weight:500">${c['Nom']||'—'}</td>
+      <td>${c['Prénom']||'—'}</td>
+      <td class="mono">${c['Téléphone']||'—'}</td>
+      <td>${c['Email']||'—'}</td>
+      <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${c['Adresse postale']||'—'}</td>
+      <td><span class="badge badge-dispo">${nb} œuvre${nb>1?'s':''}</span></td>
+      <td><button class="btn btn-sm" onclick="editClient('${c.id}')">Modifier</button></td>
+    </tr>`;
+  }).join('');
+}
+
+function refreshAcheteurSelect(){
+  const sel=document.getElementById('o-acheteur');const cur=sel.value;
+  sel.innerHTML='<option value="">— Aucun —</option>'+clients.map(c=>`<option value="${c.id}">${c['Nom']||''} ${c['Prénom']||''}</option>`).join('');
+  sel.value=cur;
+}
+
+function refreshCertSelect(){
+  const sorted=[...oeuvres].sort((a,b)=>parseNum(a['N° certificat'])-parseNum(b['N° certificat']));
+  document.getElementById('cert-oeuvre-select').innerHTML='<option value="">— Choisir une œuvre —</option>'+sorted.map(o=>`<option value="${o.id}">${o['N° certificat']||'?'}${o['Titre']?' — '+o['Titre']:''}</option>`).join('');
+}
+
+function showSection(name){
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.getElementById('sec-'+name).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach((el,i)=>el.classList.toggle('active',['oeuvres','clients','cert'][i]===name));
+  if(name==='cert')updatePreview();
+}
+function openModal(id){document.getElementById(id).classList.add('open');}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+
+function openOeuvreModal(){
+  document.getElementById('oeuvre-modal-title').textContent='Nouvelle œuvre';
+  document.getElementById('o-record-id').value='';
+  ['o-titre','o-annee','o-technique','o-support','o-h','o-l','o-prix','o-loc','o-dt-galerie','o-dt-reserve','o-dt-vente','o-notes'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('o-statut').value='Disponible';
+  document.getElementById('o-dt-enreg').value=new Date().toISOString().split('T')[0];
+  document.getElementById('o-photo-drop').innerHTML='Cliquer pour ajouter une photo';
+  oeuvrePhotoUrl=null;refreshAcheteurSelect();document.getElementById('o-acheteur').value='';
+  openModal('modal-oeuvre');
+}
+
+function editOeuvre(id){
+  const o=oeuvres.find(x=>x.id===id);if(!o)return;
+  document.getElementById('oeuvre-modal-title').textContent="Modifier l'œuvre";
+  document.getElementById('o-record-id').value=id;
+  document.getElementById('o-titre').value=o['Titre']||'';
+  document.getElementById('o-annee').value=o['Année de création']||'';
+  document.getElementById('o-technique').value=o['Technique']||'';
+  document.getElementById('o-support').value=o['Support']||'';
+  document.getElementById('o-h').value=o['Hauteur (cm)']||'';
+  document.getElementById('o-l').value=o['Largeur (cm)']||'';
+  document.getElementById('o-statut').value=o['Statut']||'Disponible';
+  document.getElementById('o-prix').value=o['Prix (€)']||'';
+  document.getElementById('o-loc').value=o['Localisation actuelle']||'';
+  document.getElementById('o-dt-galerie').value=o['Date entrée en galerie']||'';
+  document.getElementById('o-dt-reserve').value=o['Date réservation']||'';
+  document.getElementById('o-dt-vente').value=o['Date de vente']||'';
+  document.getElementById('o-dt-enreg').value=o['Date de création (fiche)']||'';
+  document.getElementById('o-notes').value=o['Notes']||'';
+  oeuvrePhotoUrl=null;
+  if(o['Photo']&&o['Photo'][0])document.getElementById('o-photo-drop').innerHTML=`<img src="${o['Photo'][0].url}" style="height:60px;border-radius:4px;object-fit:contain">`;
+  else document.getElementById('o-photo-drop').innerHTML='Cliquer pour ajouter une photo';
+  refreshAcheteurSelect();document.getElementById('o-acheteur').value=(o['Acheteur']&&o['Acheteur'][0])||'';
+  openModal('modal-oeuvre');
+}
+
+async function saveOeuvre(){
+  const btn=document.getElementById('save-oeuvre-btn');btn.textContent='Enregistrement...';btn.disabled=true;
+  const recordId=document.getElementById('o-record-id').value;const isNew=!recordId;
+  const fields={'Titre':document.getElementById('o-titre').value.trim()||null,'Année de création':document.getElementById('o-annee').value.trim()||null,'Technique':document.getElementById('o-technique').value.trim()||null,'Support':document.getElementById('o-support').value.trim()||null,'Statut':document.getElementById('o-statut').value,'Localisation actuelle':document.getElementById('o-loc').value.trim()||null,'Notes':document.getElementById('o-notes').value.trim()||null};
+  const h=document.getElementById('o-h').value;if(h)fields['Hauteur (cm)']=Number(h);
+  const l=document.getElementById('o-l').value;if(l)fields['Largeur (cm)']=Number(l);
+  const p=document.getElementById('o-prix').value;if(p)fields['Prix (€)']=Number(p);
+  const dg=document.getElementById('o-dt-galerie').value;if(dg)fields['Date entrée en galerie']=dg;
+  const dr=document.getElementById('o-dt-reserve').value;if(dr)fields['Date réservation']=dr;
+  const dv=document.getElementById('o-dt-vente').value;if(dv)fields['Date de vente']=dv;
+  const de=document.getElementById('o-dt-enreg').value;if(de)fields['Date de création (fiche)']=de;
+  const acheteur=document.getElementById('o-acheteur').value;if(acheteur)fields['Acheteur']=[acheteur];
+  if(isNew){const count=oeuvres.length+1;fields['N° certificat']=`JEK-${new Date().getFullYear()}-${String(count).padStart(3,'0')}`;}
+  try{
+    if(isNew)await airtableFetch(TABLE_OEUVRES,{method:'POST',body:{fields}});
+    else await airtableFetch(TABLE_OEUVRES+'/'+recordId,{method:'PATCH',body:{fields}});
+    closeModal('modal-oeuvre');showToast(isNew?'Œuvre enregistrée ✓':'Œuvre mise à jour ✓');await loadData();
+  }catch(e){showToast('Erreur : '+e.message);}
+  btn.textContent='Enregistrer';btn.disabled=false;
+}
+
+function loadOeuvrePhoto(e){
+  const f=e.target.files[0];if(!f)return;
+  const r=new FileReader();r.onload=ev=>{oeuvrePhotoUrl=ev.target.result;document.getElementById('o-photo-drop').innerHTML=`<img src="${oeuvrePhotoUrl}" style="height:60px;border-radius:4px;object-fit:contain">`;};r.readAsDataURL(f);
+}
+
+function openClientModal(){
+  document.getElementById('client-modal-title').textContent='Nouveau client';document.getElementById('cl-record-id').value='';
+  ['cl-nom','cl-prenom','cl-tel','cl-email','cl-adresse'].forEach(id=>document.getElementById(id).value='');
+  openModal('modal-client');
+}
+function editClient(id){
+  const c=clients.find(x=>x.id===id);if(!c)return;
+  document.getElementById('client-modal-title').textContent='Modifier le client';document.getElementById('cl-record-id').value=id;
+  document.getElementById('cl-nom').value=c['Nom']||'';document.getElementById('cl-prenom').value=c['Prénom']||'';
+  document.getElementById('cl-tel').value=c['Téléphone']||'';document.getElementById('cl-email').value=c['Email']||'';
+  document.getElementById('cl-adresse').value=c['Adresse postale']||'';openModal('modal-client');
+}
+async function saveClient(){
+  const btn=document.getElementById('save-client-btn');btn.textContent='Enregistrement...';btn.disabled=true;
+  const recordId=document.getElementById('cl-record-id').value;const isNew=!recordId;
+  const nom=document.getElementById('cl-nom').value.trim();
+  if(!nom){showToast('Le nom est obligatoire');btn.textContent='Enregistrer';btn.disabled=false;return;}
+  const fields={'Nom':nom,'Prénom':document.getElementById('cl-prenom').value.trim()||null,'Téléphone':document.getElementById('cl-tel').value.trim()||null,'Email':document.getElementById('cl-email').value.trim()||null,'Adresse postale':document.getElementById('cl-adresse').value.trim()||null};
+  try{
+    if(isNew)await airtableFetch(TABLE_CLIENTS,{method:'POST',body:{fields}});
+    else await airtableFetch(TABLE_CLIENTS+'/'+recordId,{method:'PATCH',body:{fields}});
+    closeModal('modal-client');showToast(isNew?'Client enregistré ✓':'Client mis à jour ✓');await loadData();
+  }catch(e){showToast('Erreur : '+e.message);}
+  btn.textContent='Enregistrer';btn.disabled=false;
+}
+
+function genCertFromOeuvre(id){
+  const o=oeuvres.find(x=>x.id===id);if(!o)return;
+  document.getElementById('c-num').value=o['N° certificat']||'';
+  document.getElementById('c-titre').value=o['Titre']||'';
+  document.getElementById('c-annee').value=o['Année de création']||'';
+  document.getElementById('c-technique').value=o['Technique']||'';
+  document.getElementById('c-support').value=o['Support']||'';
+  document.getElementById('c-h').value=o['Hauteur (cm)']||'';
+  document.getElementById('c-l').value=o['Largeur (cm)']||'';
+  certPhotoUrl=(o['Photo']&&o['Photo'][0])?o['Photo'][0].url:null;
+  if(certPhotoUrl)document.getElementById('c-photo-drop').innerHTML=`<img src="${certPhotoUrl}" style="height:60px;border-radius:4px;object-fit:contain">`;
+  else document.getElementById('c-photo-drop').innerHTML='Cliquer pour ajouter une photo';
+  showSection('cert');updatePreview();
+}
+function prefillCert(){const id=document.getElementById('cert-oeuvre-select').value;if(id)genCertFromOeuvre(id);}
+function loadCertPhoto(e){
+  const f=e.target.files[0];if(!f)return;
+  const r=new FileReader();r.onload=ev=>{certPhotoUrl=ev.target.result;document.getElementById('c-photo-drop').innerHTML=`<img src="${certPhotoUrl}" style="height:60px;border-radius:4px;object-fit:contain">`;updatePreview();};r.readAsDataURL(f);
+}
+function gv(id){return document.getElementById(id).value.trim();}
+
+function updatePreview(){
+  const num=gv('c-num')||'JEK-2026-001';
+  const titre=gv('c-titre')||num;
+  const photo=certPhotoUrl?`<img src="${certPhotoUrl}" style="width:100%;max-height:80px;object-fit:contain;border-radius:3px;margin:8px 0;display:block">`:`<div style="height:65px;background:#F7F5F0;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:8px;color:#9E9890;letter-spacing:.1em;margin:8px 0">PHOTO DE L'ŒUVRE</div>`;
+  const fields=[['ANNÉE',gv('c-annee')||'—'],['TECHNIQUE',gv('c-technique')||'—'],['SUPPORT',gv('c-support')||'—'],['DIMENSIONS',(gv('c-h')||'—')+' × '+(gv('c-l')||'—')+' cm'],['ÉDITION','Unique · 1/1'],['N° INVENTAIRE',num]];
+  document.getElementById('cert-preview').innerHTML=`
+    <div style="border-bottom:1px solid #E2DDD6;padding-bottom:10px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:flex-start">
+      <div><div style="font-size:20px;font-weight:300;letter-spacing:.08em;font-family:'Cormorant Garamond',serif">JEK</div><div style="font-size:7px;letter-spacing:.16em;color:#9E9890;margin-top:2px;font-family:'DM Mono',monospace">CERTIFICAT D'AUTHENTICITÉ</div></div>
+      <div style="text-align:right;font-size:8px;color:#9E9890;font-family:'DM Mono',monospace">N°<br><b style="color:#1A1814;font-size:9px">${num}</b></div>
+    </div>
+    <div style="font-size:7px;letter-spacing:.14em;color:#9E9890;margin-bottom:3px;font-family:'DM Mono',monospace">RÉFÉRENCE</div>
+    <div style="font-size:14px;font-weight:300;border-bottom:1px solid #E2DDD6;padding-bottom:8px;margin-bottom:8px;font-family:'Cormorant Garamond',serif">${titre}</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;border:1px solid #E2DDD6;border-radius:3px;overflow:hidden;margin-bottom:4px">
+      ${fields.map((f,i)=>`<div style="padding:5px 8px;border-right:${i%2===0?'1px solid #E2DDD6':'none'};border-bottom:${i<4?'1px solid #E2DDD6':'none'}"><div style="font-size:7px;letter-spacing:.12em;color:#9E9890;font-family:'DM Mono',monospace">${f[0]}</div><div style="font-size:10px;margin-top:2px">${f[1]}</div></div>`).join('')}
+    </div>
+    ${photo}
+    <div style="font-size:7px;color:#6B6560;line-height:1.6;border-left:2px solid #E2DDD6;padding-left:8px;margin:8px 0">Je soussigné Jean-François Parodi, dit Jek, certifie que cette œuvre est une création originale de ma main. Ce certificat en garantit l'authenticité.</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:10px">
+      <div><div style="border-bottom:1px solid #1A1814;height:24px;margin-bottom:4px"></div><div style="font-size:7px;letter-spacing:.1em;color:#9E9890;font-family:'DM Mono',monospace">SIGNATURE ARTISTE</div></div>
+      <div><div style="border-bottom:1px solid #1A1814;height:24px;margin-bottom:4px"></div><div style="font-size:7px;letter-spacing:.1em;color:#9E9890;font-family:'DM Mono',monospace">SIGNATURE REPRÉSENTANT</div></div>
+    </div>`;
+}
+
+function generatePDF(){
+  const{jsPDF}=window.jspdf;
+  const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+  const W=210,H=297,m=20,pad=m+10;
+  doc.setFillColor(247,245,240);doc.rect(0,0,W,H,'F');
+  doc.setFillColor(255,255,255);doc.rect(m,20,W-2*m,H-40,'F');
+  doc.setDrawColor(226,221,214);doc.setLineWidth(0.3);doc.rect(m,20,W-2*m,H-40,'S');
+  doc.setFont('helvetica','normal');doc.setFontSize(28);doc.setTextColor(26,24,20);doc.text('JEK',pad,38);
+  doc.setFontSize(7.5);doc.setTextColor(158,152,144);doc.text("CERTIFICAT D'AUTHENTICITÉ  ·  JEAN-FRANÇOIS PARODI",pad,44);
+  const num=gv('c-num')||'JEK-2026-001';
+  doc.setFontSize(7);doc.text('N° CERTIFICAT',W-pad,36,{align:'right'});
+  doc.setFont('helvetica','bold');doc.setFontSize(10);doc.setTextColor(26,24,20);doc.text(num,W-pad,42,{align:'right'});
+  doc.setDrawColor(226,221,214);doc.setLineWidth(0.3);doc.line(pad,50,W-pad,50);
+  let y=58;
+  const titre=gv('c-titre')||num;
+  doc.setFont('helvetica','normal');doc.setFontSize(7.5);doc.setTextColor(158,152,144);doc.text('RÉFÉRENCE',pad,y);
+  doc.setFont('helvetica','normal');doc.setFontSize(18);doc.setTextColor(26,24,20);doc.text(titre,pad,y+9);
+  doc.line(pad,y+14,W-pad,y+14);
+  y=78;
+  const half=(W-2*pad)/2;
+  const fields=[['ANNÉE',gv('c-annee')||'—',0],['TECHNIQUE',gv('c-technique')||'—',1],['SUPPORT',gv('c-support')||'—',0],['DIMENSIONS',(gv('c-h')||'—')+' × '+(gv('c-l')||'—')+' cm',1],['ÉDITION','Œuvre unique · 1/1',0],["N° INVENTAIRE",num,1]];
+  const rH=14;
+  fields.forEach(([label,val,col],i)=>{
+    const row=Math.floor(i/2),cx=pad+col*(half+2),cy=y+row*rH;
+    doc.setFont('helvetica','normal');doc.setFontSize(7);doc.setTextColor(158,152,144);doc.text(label,cx,cy+3);
+    doc.setFont('helvetica','bold');doc.setFontSize(10);doc.setTextColor(26,24,20);doc.text(String(val),cx,cy+10);
+    doc.setDrawColor(226,221,214);doc.setLineWidth(0.2);doc.line(cx,cy+rH,cx+half-2,cy+rH);
+    if(col===0)doc.line(cx+half,cy,cx+half,cy+rH);
+  });
+  y+=3*rH+8;
+
+  if(certPhotoUrl){
+    // Garder les proportions de la photo
+    const img=new Image();img.src=certPhotoUrl;
+    const iw=img.naturalWidth||600,ih=img.naturalHeight||400;
+    const maxW=W-2*pad,maxH=50;
+    const ratio=Math.min(maxW/iw,maxH/ih);
+    const fw=iw*ratio,fh=ih*ratio;
+    const fx=pad+(maxW-fw)/2;
+    doc.addImage(certPhotoUrl,'JPEG',fx,y,fw,fh);
+    y+=fh+4;
+  }else{
+    doc.setFillColor(241,239,232);doc.setDrawColor(226,221,214);doc.setLineWidth(0.3);doc.rect(pad,y,W-2*pad,46,'FD');
+    doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(158,152,144);doc.text("PHOTOGRAPHIE DE L'ŒUVRE",W/2,y+25,{align:'center'});
+    y+=50;
+  }
+
+  doc.setFillColor(226,221,214);doc.rect(pad,y,1,13,'F');
+  doc.setFont('helvetica','normal');doc.setFontSize(8.5);doc.setTextColor(107,101,96);
+  const decl="Je soussigné Jean-François Parodi, dit Jek, artiste peintre, certifie que cette œuvre est une création originale de ma main, réalisée dans les conditions mentionnées ci-dessus. Ce certificat accompagne l'œuvre et en garantit l'authenticité.";
+  doc.text(doc.splitTextToSize(decl,W-2*pad-6),pad+4,y+5);
+  y+=20;
+  const today=new Date().toLocaleDateString('fr-FR',{day:'2-digit',month:'long',year:'numeric'});
+  const sigW=(W-2*pad)/2-8;
+  doc.setDrawColor(26,24,20);doc.setLineWidth(0.4);doc.line(pad,y,pad+sigW,y);
+  doc.setFont('helvetica','normal');doc.setFontSize(7.5);doc.setTextColor(158,152,144);
+  doc.text("SIGNATURE DE L'ARTISTE — JEK",pad,y+5);
+  y+=14;
+  doc.setLineWidth(0.3);doc.setDrawColor(226,221,214);doc.line(pad,y,pad+sigW,y);
+  doc.setFontSize(7);doc.setTextColor(158,152,144);doc.text('DATE DE CERTIFICATION',pad,y+5);
+  doc.setFont('helvetica','bold');doc.setFontSize(9);doc.setTextColor(26,24,20);doc.text(today,pad+42,y+5);
+  doc.setFillColor(241,239,232);doc.rect(m,H-25,W-2*m,10,'F');
+  doc.setFont('helvetica','normal');doc.setFontSize(7);doc.setTextColor(158,152,144);
+  doc.text("DOCUMENT OFFICIEL · NON CESSIBLE · À CONSERVER AVEC L'ŒUVRE",m+5,H-19);
+  doc.text(num,W-m-5,H-19,{align:'right'});
+  doc.save(num+'.pdf');
+}
+
+// Check config on load
+function checkConfig(){
+  try {
+    const{token,baseId}=getConfig();
+    if(!token||!baseId){
+      document.getElementById('config-modal').classList.add('open');
+    } else {
+      loadData();
+    }
+  } catch(e) {
+    document.getElementById('config-modal').classList.add('open');
+  }
+}
+function saveConfigAndLoad(){
+  const token=document.getElementById('cfg-token').value.trim();
+  const baseId=document.getElementById('cfg-base').value.trim();
+  if(!token||!baseId){showToast('Les deux champs sont obligatoires');return;}
+  try { saveConfig(token,baseId); } catch(e) {}
+  document.getElementById('config-modal').classList.remove('open');
+  loadData();
+}
+// Also add settings button to sidebar footer
+document.addEventListener('DOMContentLoaded', function(){
+  document.querySelector('.sidebar-footer').innerHTML += '<br><span onclick="document.getElementById('config-modal').classList.add('open')" style="cursor:pointer;color:rgba(255,255,255,.25);font-size:10px;font-family:var(--font-mono);letter-spacing:.06em">⚙ Modifier la connexion</span>';
+});
+checkConfig();updatePreview();
+</script>
+
+<!-- MODAL CONFIG -->
+<div class="modal-overlay" id="config-modal">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-header">
+      <div class="modal-title">Connexion Airtable</div>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:13px;color:var(--text-mid);margin-bottom:1.25rem;line-height:1.6">Ces informations sont stockées uniquement dans votre navigateur et ne sont jamais partagées.</p>
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div class="field">
+          <label>Personal Access Token Airtable</label>
+          <input type="password" id="cfg-token" placeholder="patXXXXXX..." autocomplete="off">
+        </div>
+        <div class="field">
+          <label>ID de la base Airtable</label>
+          <input type="text" id="cfg-base" placeholder="appXXXXXX..." autocomplete="off">
+        </div>
+      </div>
+      <div style="margin-top:1rem;padding:0.75rem 1rem;background:var(--bg);border-radius:var(--radius);border:1px solid var(--border)">
+        <div style="font-size:11px;color:var(--text-light);font-family:var(--font-mono);letter-spacing:.08em">BASE ID PAR DÉFAUT</div>
+        <div style="font-size:12px;font-family:var(--font-mono);margin-top:4px;color:var(--text-mid)">appmrnStDpnfj6vVb</div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-primary" onclick="saveConfigAndLoad()" style="width:100%">Se connecter</button>
+    </div>
+  </div>
+</div>
+
+<!-- RESET CONFIG (hidden button in sidebar) -->
+<div style="position:fixed;bottom:60px;left:0;width:220px;padding:0 1.5rem">
+  <button onclick="localStorage.removeItem('jek_token');localStorage.removeItem('jek_base');location.reload()" style="width:100%;padding:6px;font-size:10px;background:none;border:none;color:rgba(255,255,255,.2);cursor:pointer;font-family:var(--font-mono);letter-spacing:.06em">Réinitialiser la connexion</button>
+</div>
+</body>
+</html>
